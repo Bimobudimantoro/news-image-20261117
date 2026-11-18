@@ -214,7 +214,68 @@ fy = H - 18
 d.rectangle([14, fy-4, W-14, fy-3], fill=INK)
 d.text((14, fy), "TUESDAY 17 NOVEMBER 2026  ·  REUTERS · AP · AFP · WHO · CDC · OSINT · PAHO", font=F_FOOT, fill=SUB)
 
-# ── Save (quantize 128 colors, no dither — text stays sharp) ──────
-img_q = img.quantize(colors=128, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-img_q.save(OUT, "PNG", optimize=True)
+# ── Add simple SVG-style illustrations on lead stories ────────────
+# Lead 1: Crimean Bridge (simplified)
+def draw_bridge(x, y, w, h, color_ink=INK):
+    d.rectangle([x, y, x+w, y+h], fill=(223, 232, 242))  # sky
+    d.rectangle([x, y+h-18, x+w, y+h], fill=(61, 111, 158))  # sea
+    # Bridge left section
+    d.rectangle([x, y+h-30, x+w//2-10, y+h-24], fill=(74, 79, 90))
+    # Fallen arch
+    d.arc([x+w//2-20, y+h-40, x+w//2+20, y+h-20], 0, 180, fill=(47, 51, 59), width=4)
+    # Right section
+    d.rectangle([x+w//2+10, y+h-30, x+w, y+h-24], fill=(74, 79, 90))
+    # Smoke
+    for cx, cy, cr in [(x+w//2, y+15, 8), (x+w//2+10, y+8, 6), (x+w//2-8, y+10, 5)]:
+        d.ellipse([cx-cr, cy-cr, cx+cr, cy+cr], fill=(125, 130, 140))
+    # Label
+    d.rectangle([x, y+h-14, x+w, y+h], fill=(31, 63, 102))
+    d.text((x+w//2, y+h-7), "KERCH STRAIT · ROAD SPAN IN THE SEA", font=F_MAP, fill=(255,255,255), anchor="mm")
+
+# Lead 2: Iran/Bahrain map
+def draw_iran_map(x, y, w, h):
+    d.rectangle([x, y, x+w, y+h], fill=(143, 187, 224))  # water
+    # Iran coast
+    d.polygon([(x, y), (x+w, y), (x+w, y+30), (x+w-40, y+35), (x+w-80, y+25), (x, y+15)], fill=(239, 227, 196))
+    # Arabia
+    d.polygon([(x, y+h), (x, y+h-25), (x+40, y+h-35), (x+80, y+h-30), (x+w-30, y+h-15), (x+w, y+h)], fill=(239, 227, 196))
+    # Drone path (red dashed)
+    for dx in range(0, 60, 8):
+        d.line([x+w//2-30+dx, y+20, x+w//2-26+dx, y+25], fill=ME, width=2)
+    # US jets (blue arrow)
+    d.line([x+w//2, y+h-20, x+w-30, y+40], fill=(31, 79, 168), width=2)
+    # Labels
+    d.rectangle([x+30, y+30, x+120, y+42], fill=ME)
+    d.text((x+75, y+36), "IRAN: DRONES AT US RADAR", font=F_MAP, fill=(255,255,255), anchor="mm")
+    d.rectangle([x+40, y+h-50, x+120, y+h-38], fill=(31, 79, 168))
+    d.text((x+80, y+h-44), "US JETS HIT QESHM", font=F_MAP, fill=(255,255,255), anchor="mm")
+
+# Lead 3: Quad summit flags
+def draw_quad(x, y, w, h):
+    d.rectangle([x, y, x+w, y+h], fill=(236, 230, 246))  # bg
+    # 4 flags
+    fw = (w - 20) // 4
+    flags = [
+        (AM, "US"),     # US
+        (AS, "IND"),    # India
+        (AM, "JPN"),    # Japan
+        (OC, "AUS"),    # Australia
+    ]
+    for i, (c, lbl) in enumerate(flags):
+        fx = x + 5 + i * (fw + 5)
+        d.rectangle([fx, y+5, fx+fw, y+30], fill=(255,255,255), outline=(170,170,170))
+        d.rectangle([fx, y+5, fx+fw, y+10], fill=c)
+        d.text((fx+fw//2, y+38), lbl, font=F_MAP, fill=INK, anchor="mm")
+    # Label
+    d.rectangle([x, y+h-14, x+w, y+h], fill=AS)
+    d.text((x+w//2, y+h-7), "CRITICAL MINERALS · EXPORT CURBS", font=F_MAP, fill=(255,255,255), anchor="mm")
+
+# Draw illustrations on leads
+ly2 = nums_y + 44 + 4  # same as ly but +4 for pic space
+pic_h = 50
+for i, draw_fn in enumerate([draw_bridge, draw_iran_map, draw_quad]):
+    draw_fn(lead_x[i], ly2, lead_w, pic_h)
+
+# ── Save (full RGB PNG, no quantization — text stays sharp, larger file) ──
+img.save(OUT, "PNG", optimize=True)
 print(f"Written {OUT} — {os.path.getsize(OUT)} bytes ({os.path.getsize(OUT)/1024:.1f} KB)")
